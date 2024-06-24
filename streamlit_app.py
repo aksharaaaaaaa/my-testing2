@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from streamlit_extras.stoggle import stoggle
 import numpy as np
 import plotly.express as px
 import pandas as pd
@@ -66,7 +65,8 @@ with col2:
 
 #moves
 st.subheader(':orange[Moves!]', divider = 'orange')
-stoggle(f"This pokemon can learn {move_count} moves - click to see which ones!",move_list)
+st.write(f"This pokemon can learn {move_count} moves:")
+st.write(move_list)
 
 #base stats
 base_stats_keys = [stat['stat']['name'] for stat in response['stats']]
