@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import numpy as np
-import plotly.express as px
+#import plotly.express as px
 import pandas as pd
 
 st.title('Pokemon explorer!')
@@ -75,13 +75,13 @@ base_stats = dict(zip(base_stats_keys, base_stats_values))
 
 st.subheader(':green[Base stats!]', divider = 'green')
 
-tab1, tab2 = st.tabs(["Bar chart","Radar plot"])
-with tab1:
-    st.bar_chart(base_stats, 
-             x_label = 'Base stat level', 
-             y_label = 'Stat name', 
-             horizontal=True)
-with tab2:
-    df = pd.DataFrame(dict(base_stats), index = [1])
-    radplot = px.line_polar(df, r = base_stats_values, theta = base_stats_keys, line_close = True)
-    st.plotly_chart(radplot)
+#tab1, tab2 = st.tabs(["Bar chart","Radar plot"])
+#with tab1:
+st.bar_chart(base_stats, 
+            x_label = 'Base stat level', 
+            y_label = 'Stat name', 
+            horizontal=True)
+#with tab2:
+ #   df = pd.DataFrame(dict(base_stats), index = [1])
+ #   radplot = px.line_polar(df, r = base_stats_values, theta = base_stats_keys, line_close = True)
+ #  st.plotly_chart(radplot)
