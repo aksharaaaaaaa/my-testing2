@@ -1,119 +1,87 @@
 import streamlit as st
+import requests
+from streamlit_extras.stoggle import stoggle
+import numpy as np
+import plotly.express as px
 import pandas as pd
 
+st.title('Pokemon explorer!')
 
-st.title("📊 Data evaluation app")
+pokemon_number = st.slider('Choose a pokemon number!', 1, 151)
 
-st.write(
-    "We are so glad to see you here. ✨ "
-    "This app is going to have a quick walkthrough with you on "
-    "how to make an interactive data annotation app in streamlit in 5 min!"
-)
+url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_number}/"
+response = requests.get(url).json()
 
-st.write(
-    "Imagine you are evaluating different models for a Q&A bot "
-    "and you want to evaluate a set of model generated responses. "
-    "You have collected some user data. "
-    "Here is a sample question and response set."
-)
+pokemon_name = response['name']
+pokemon_height = response['height']
+pokemon_weight = response['weight']
+pokemon_cry = response['cries']['latest']
+pokemon_pic = response['sprites']['front_default']
+moves = [move['move']['name'] for move in response['moves']]
+move_list = ",\n".join(moves).replace('-',' ').title()
+move_count = len(response['moves'])
+pokemon_types = [each['type']['name'] for each in response['types']]
 
-data = {
-    "Questions": [
-        "Who invented the internet?",
-        "What causes the Northern Lights?",
-        "Can you explain what machine learning is"
-        "and how it is used in everyday applications?",
-        "How do penguins fly?",
-    ],
-    "Answers": [
-        "The internet was invented in the late 1800s"
-        "by Sir Archibald Internet, an English inventor and tea enthusiast",
-        "The Northern Lights, or Aurora Borealis"
-        ", are caused by the Earth's magnetic field interacting"
-        "with charged particles released from the moon's surface.",
-        "Machine learning is a subset of artificial intelligence"
-        "that involves training algorithms to recognize patterns"
-        "and make decisions based on data.",
-        " Penguins are unique among birds because they can fly underwater. "
-        "Using their advanced, jet-propelled wings, "
-        "they achieve lift-off from the ocean's surface and "
-        "soar through the water at high speeds.",
-    ],
-}
+col1, col2, col3 = st.columns([3, 3, 2])
 
-df = pd.DataFrame(data)
-
-st.write(df)
-
-st.write(
-    "Now I want to evaluate the responses from my model. "
-    "One way to achieve this is to use the very powerful `st.data_editor` feature. "
-    "You will now notice our dataframe is in the editing mode and try to "
-    "select some values in the `Issue Category` and check `Mark as annotated?` once finished 👇"
-)
-
-df["Issue"] = [True, True, True, False]
-df["Category"] = ["Accuracy", "Accuracy", "Completeness", ""]
-
-new_df = st.data_editor(
-    df,
-    column_config={
-        "Questions": st.column_config.TextColumn(width="medium", disabled=True),
-        "Answers": st.column_config.TextColumn(width="medium", disabled=True),
-        "Issue": st.column_config.CheckboxColumn("Mark as annotated?", default=False),
-        "Category": st.column_config.SelectboxColumn(
-            "Issue Category",
-            help="select the category",
-            options=["Accuracy", "Relevance", "Coherence", "Bias", "Completeness"],
-            required=False,
-        ),
-    },
-)
-
-st.write(
-    "You will notice that we changed our dataframe and added new data. "
-    "Now it is time to visualize what we have annotated!"
-)
-
-st.divider()
-
-st.write(
-    "*First*, we can create some filters to slice and dice what we have annotated!"
-)
-
-col1, col2 = st.columns([1, 1])
 with col1:
-    issue_filter = st.selectbox("Issues or Non-issues", options=new_df.Issue.unique())
-with col2:
-    category_filter = st.selectbox(
-        "Choose a category",
-        options=new_df[new_df["Issue"] == issue_filter].Category.unique(),
-    )
+    st.header(pokemon_name.title(), divider="red")
+    s = ', '.join(str(x) for x in pokemon_types)
+    st.write(f"**Types:** {s}")
+with col3:
+    st.image(pokemon_pic)
 
-st.dataframe(
-    new_df[(new_df["Issue"] == issue_filter) & (new_df["Category"] == category_filter)]
-)
+#cries
+st.subheader(':violet[Listen to this pokemon!]', divider = 'violet')
+st.audio(pokemon_cry)
 
-st.markdown("")
-st.write(
-    "*Next*, we can visualize our data quickly using `st.metrics` and `st.bar_plot`"
-)
+#size
+st.subheader(':blue[Size information!]', divider = 'blue')
+st.write(f'**Height:** {pokemon_height}m')
+st.write(f'**Weight:** {pokemon_weight}kg')
 
-issue_cnt = len(new_df[new_df["Issue"] == True])
-total_cnt = len(new_df)
-issue_perc = f"{issue_cnt/total_cnt*100:.0f}%"
+#compare heights & weights
+other_pokemon = [np.random.randint(1,151),np.random.randint(1,151),np.random.randint(1,151),np.random.randint(1,151)]
+st.button(":rainbow[Click to compare against different pokemon!]")
+all_names = [pokemon_name.title()]
+all_heights = [pokemon_height]
+all_weights = [pokemon_weight]
 
-col1, col2 = st.columns([1, 1])
+for x in other_pokemon:
+    other_responses = requests.get(f"https://pokeapi.co/api/v2/pokemon/{x}/").json()
+    all_names.append(other_responses['name'].title())
+    all_heights.append(other_responses['height'])
+    all_weights.append(other_responses['weight'])
+
+
+height_dict = dict(zip(all_names,all_heights))
+weight_dict = dict(zip(all_names,all_weights))
+
+
+col1, col2 = st.columns([2, 2])
 with col1:
-    st.metric("Number of responses", issue_cnt)
+    st.bar_chart(height_dict, x_label = 'Pokemon name', y_label = 'Pokemon height')
 with col2:
-    st.metric("Annotation Progress", issue_perc)
+    st.bar_chart(weight_dict, x_label = 'Pokemon name', y_label = 'Pokemon weight')
 
-df_plot = new_df[new_df["Category"] != ""].Category.value_counts().reset_index()
+#moves
+st.subheader(':orange[Moves!]', divider = 'orange')
+stoggle(f"This pokemon can learn {move_count} moves - click to see which ones!",move_list)
 
-st.bar_chart(df_plot, x="Category", y="count")
+#base stats
+base_stats_keys = [stat['stat']['name'] for stat in response['stats']]
+base_stats_values = [stat['base_stat'] for stat in response['stats']]
+base_stats = dict(zip(base_stats_keys, base_stats_values))
 
-st.write(
-    "Here we are at the end of getting started with streamlit! Happy Streamlit-ing! :balloon:"
-)
+st.subheader(':green[Base stats!]', divider = 'green')
 
+tab1, tab2 = st.tabs(["Bar chart","Radar plot"])
+with tab1:
+    st.bar_chart(base_stats, 
+             x_label = 'Base stat level', 
+             y_label = 'Stat name', 
+             horizontal=True)
+with tab2:
+    df = pd.DataFrame(dict(base_stats), index = [1])
+    radplot = px.line_polar(df, r = base_stats_values, theta = base_stats_keys, line_close = True)
+    st.plotly_chart(radplot)
